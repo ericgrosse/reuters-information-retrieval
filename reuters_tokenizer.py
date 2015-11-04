@@ -87,9 +87,11 @@ if generateFiles.lower() == 'y':
 
                 words = [x.lower() for x in words] # convert words to lowercase
                 words = [x for x in words if x not in stopwords] # remove stopwords
+                words = [x for x in words if x not in ''] # filters out empty strings
 
             else:
                 words = re.split('\W+', words_raw) # only filters out newlines and punctuation
+                words = [x for x in words if x not in ''] # filters out empty strings
 
             # Create the inverted index (using a dictionary<string, list> data structure)
             for word in words:
@@ -105,7 +107,7 @@ if generateFiles.lower() == 'y':
             fileNumber += 1
 
         # Sort the inverted index and write to disk (as binary data)
-        sortedIndex = collections.OrderedDict(sorted(invertedIndex.items()))
+        sortedIndex = sorted(invertedIndex.items()) # The sorted index is a list of tuples instead of a dictionary
         output = open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb')
         pickle.dump(sortedIndex, output)
         output.close()

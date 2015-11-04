@@ -6,6 +6,41 @@ import collections
 import pickle
 from itertools import chain
 
+'''
+Merges multiple sorted lists into a single sorted list
+'''
+def parallelMerge(args): # args expects a list of lists. Ex/ [ [ ("a", [4,23,55]), ("b", [3,12,59]) ], [ ("a", [33,44,55]), ("c", [12,82,106]) ] ]
+
+    mergeResultIncrementor = 0
+    mergeResult = []
+    mergeResultLength = 0
+
+    for lst in args:
+        mergeResultLength += len(lst)
+
+    while mergeResultIncrementor < mergeResultLength:
+
+        min = ("zzzzzzzzzzzzzzzzzzzzzzzz", [0]) # Assign min a very high value so that it's guaranteed to be overridden right away
+        position = -1 # Assign an impossible position for the same reason as above
+
+        for index in range(len(args)):
+            if args[index][0][0] < min[0]: # If the first element of the chosen list has a key less than the min's key
+                min = args[index][0] # min is set to the entire tuple, ex/ ("a", [2,5,7])
+                position = index
+
+        if(len(mergeResult) > 0 and mergeResult[-1][0] == min[0]):
+            mergeResult[-1][1].extend(min[1])
+        else:
+            mergeResult.append(min)
+
+        args[position].pop(0)
+        if len(args[position]) == 0:
+            args.pop(position)
+
+        mergeResultIncrementor += 1
+
+    return mergeResult
+
 generateFiles = input("Do you want to merge each block into a single inverted index?: (y/n) ")
 if generateFiles.lower() == 'y':
 
@@ -33,23 +68,18 @@ if generateFiles.lower() == 'y':
     for file in inputFileList:
         print("Processing file " + str(file))
         invertedIndex = pickle.load(open(file, 'rb'))
-        masterList = masterList + list(invertedIndex.items())
+        masterList.append(invertedIndex)
 
     print("\nCreating the master inverted index...")
-
-    masterOrderedDictionary = collections.OrderedDict()
-    for key, value in masterList:
-        for item in value:
-            masterOrderedDictionary.setdefault(key,[]).append(item)
-
+    masterInvertedIndex = parallelMerge(masterList)
     print("Master inverted index created")
-    masterOrderedDictionaryFilename = outputDirectory + "/master-inverted-index" + ("-compressed" if compressing else "-uncompressed") + ".txt"
+    masterInvertedIndexFilename = outputDirectory + "/master-inverted-index" + ("-compressed" if compressing else "-uncompressed") + ".txt"
 
-    print("\nWriting the master inverted index to " + masterOrderedDictionaryFilename)
-    pickle.dump(masterOrderedDictionary, open(masterOrderedDictionaryFilename,'wb'))
-    print("Finished writing to " + masterOrderedDictionaryFilename)
+    print("\nWriting the master inverted index to " + masterInvertedIndexFilename)
+    pickle.dump(masterInvertedIndex, open(masterInvertedIndexFilename,'wb'))
+    print("Finished writing to " + masterInvertedIndexFilename)
 
     print("\nWriting the master inverted index to " + masterOutputFilename)
-    masterOutput.write(str(masterOrderedDictionary))
+    masterOutput.write(str(masterInvertedIndex))
     masterOutput.close()
     print("Finished writing to " + masterOutputFilename + "\n")

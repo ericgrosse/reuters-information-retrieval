@@ -42,11 +42,12 @@ if generateFiles.lower() == 'y':
 
             resultSet = set() # a set used for intersection operations
             for word in queryWords:
-                if word in invertedIndex:
-                    if len(resultSet) == 0:
-                        resultSet = set(invertedIndex[word])
-                    else:
-                        resultSet = resultSet & set(invertedIndex[word]) # intersects the current resultSet with the postings list of the current word
+                for key, value in invertedIndex:
+                    if word == key:
+                        if len(resultSet) == 0:
+                            resultSet = set(value)
+                        else:
+                            resultSet = resultSet & set(value) # intersects the current resultSet with the postings list of the current word
 
             queryResult = list(resultSet)
             queryResult.sort()

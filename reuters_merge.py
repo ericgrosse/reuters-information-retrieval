@@ -1,4 +1,3 @@
-import nltk
 import fileinput
 from glob import glob
 import re

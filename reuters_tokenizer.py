@@ -103,7 +103,7 @@ if generateFiles.lower() == 'y':
                     if invertedIndex[word][-1]['docID'] == fileNumber:
                         invertedIndex[word][-1]['tf'] += 1
                     else:
-                        invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength:': documentLength})
+                        invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength': documentLength})
                 elif word not in invertedIndex:
                     invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength}]
 

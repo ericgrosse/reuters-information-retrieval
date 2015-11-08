@@ -7,7 +7,7 @@ Splits the 22 reuters files into 21,578 files, splitting each file based on a ne
 import fileinput
 from glob import glob
 
-generateFiles = input("Do you want to split the Reuters collection?: (y/n) ")
+generateFiles = raw_input("Do you want to split the Reuters collection?: (y/n) ")
 
 if generateFiles.lower() == 'y':
     outputBase = 'reuters-split/reuters-'

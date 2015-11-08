@@ -40,13 +40,13 @@ def parallelMerge(args): # args expects a list of lists. Ex/ [ [ ("a", [4,23,55]
 
     return mergeResult
 
-generateFiles = input("Do you want to merge each block into a single inverted index?: (y/n) ")
+generateFiles = raw_input("Do you want to merge each block into a single inverted index?: (y/n) ")
 if generateFiles.lower() == 'y':
 
     #config settings
 
     PRODUCTION_MODE = True
-    isCompressed = input("Do you want to merge the compressed blocks (y) or the uncompressed ones (n): ")
+    isCompressed = raw_input("Do you want to merge the compressed blocks (y) or the uncompressed ones (n): ")
     compressing = True if isCompressed.lower() == 'y' else False
 
     if PRODUCTION_MODE:
@@ -79,6 +79,7 @@ if generateFiles.lower() == 'y':
     print("Finished writing to " + masterInvertedIndexFilename)
 
     print("\nWriting the master inverted index to " + masterOutputFilename)
-    masterOutput.write(str(masterInvertedIndex))
+    for el in masterInvertedIndex:
+        masterOutput.write(str(el) + "\n")
     masterOutput.close()
     print("Finished writing to " + masterOutputFilename + "\n")

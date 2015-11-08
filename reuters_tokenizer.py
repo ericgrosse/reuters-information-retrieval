@@ -37,13 +37,13 @@ def partitionList(inputList, numberOfPartitions):
         appendCount = appendCount + 1
     return newList
 
-generateFiles = input("Do you want to tokenize the Reuters collection?: (y/n) ")
+generateFiles = raw_input("Do you want to tokenize the Reuters collection?: (y/n) ")
 if generateFiles.lower() == 'y':
 
     #config settings
 
     PRODUCTION_MODE = True
-    isCompressed = input("Do you want to apply compression techniques?: (y/n) ")
+    isCompressed = raw_input("Do you want to apply compression techniques?: (y/n) ")
     compressing = True if isCompressed.lower() == 'y' else False
 
     if PRODUCTION_MODE:
@@ -62,6 +62,7 @@ if generateFiles.lower() == 'y':
     fileNumber = 1
     blockNumber = 1
     stopwords = open("stopwords.sgm", 'r').read().split("\n")
+    sumOfDocLengths = 0
 
     for block in blocks:
 
@@ -92,18 +93,33 @@ if generateFiles.lower() == 'y':
                 words = re.split('\W+', words_raw) # only filters out newlines and punctuation
                 words = [x for x in words if x not in ''] # filters out empty strings
 
+            # Store the document length as the number of indexed words in the document. Results differ based on whether or not compression is applied
+            documentLength = len(words)
+            sumOfDocLengths += documentLength
+
             # Create the inverted index (using a dictionary<string, list> data structure)
             for word in words:
-                if word in invertedIndex and fileNumber not in invertedIndex[word]:
-                    invertedIndex[word].append(fileNumber)
+                if word in invertedIndex:
+                    if invertedIndex[word][-1]['docID'] == fileNumber:
+                        invertedIndex[word][-1]['tf'] += 1
+                    else:
+                        invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength:': documentLength})
                 elif word not in invertedIndex:
-                    invertedIndex[word] = [fileNumber]
+                    invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength}]
 
             if PRODUCTION_MODE:
                 if fileNumber % 10 == 0:
                     print("Finished processing file " + str(fileNumber))
 
             fileNumber += 1
+
+        # Bookkeeping sent to a separate file
+        averageDocumentLength = float(sumOfDocLengths) / float(numberOfFiles)
+        if PRODUCTION_MODE:
+            output = open('inverted-index-result/data.txt', 'wb')
+            pickle.dump(numberOfFiles, output)
+            pickle.dump(averageDocumentLength, output)
+            output.close()
 
         # Sort the inverted index and write to disk (as binary data)
         sortedIndex = sorted(invertedIndex.items()) # The sorted index is a list of tuples instead of a dictionary
@@ -113,7 +129,8 @@ if generateFiles.lower() == 'y':
 
         # Also write the inverted index to disk in a way that the user can verify
         output = open(outputDirectory + '/_inverted-index-block-raw' + str(blockNumber).zfill(3) + '.txt', 'w')
-        output.write(str(sortedIndex))
+        for el in sortedIndex:
+            output.write(str(el) + "\n")
         output.close()
 
         if PRODUCTION_MODE:

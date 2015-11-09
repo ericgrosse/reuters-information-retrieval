@@ -3,6 +3,7 @@ from glob import glob
 import re
 import collections
 import pickle
+import json
 
 def partitionRule(incrementValue, compareValue, cutoff):
     """
@@ -122,21 +123,11 @@ if generateFiles.lower() == 'y':
             output.close()
 
         # Sort the inverted index and write to disk (as binary data)
-        sortedIndex = sorted(invertedIndex.items()) # The sorted index is a list of tuples instead of a dictionary
-        output = open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb')
-        pickle.dump(sortedIndex, output)
-        output.close()
-
-        # Also write the inverted index to disk in a way that the user can verify
-        output = open(outputDirectory + '/_inverted-index-block-raw' + str(blockNumber).zfill(3) + '.txt', 'w')
-        for el in sortedIndex:
-            output.write(str(el) + "\n")
-        output.close()
+        sortedIndex = map(list, sorted(invertedIndex.items())) # The sorted index is a list of lists instead of a dictionary
+        with open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
+            json.dump(sortedIndex, output)
 
         if PRODUCTION_MODE:
             print("\nFinished processing block " + str(blockNumber) + "\n")
-        else:
-            # If not in production, print the results of the file write to console
-            print(pickle.load(open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'rb')))
 
         blockNumber += 1

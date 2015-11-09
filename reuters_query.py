@@ -5,6 +5,7 @@ import collections
 import pickle
 from itertools import chain
 import math
+import json
 
 generateFiles = raw_input("Do you want to run any queries?: (y/n) ")
 if generateFiles.lower() == 'y':
@@ -34,7 +35,8 @@ if generateFiles.lower() == 'y':
 
     print("Loading the inverted index from disk")
     for file in inputFile:
-        invertedIndex = pickle.load(open(file, 'rb'))
+        with open(file, 'rb') as content:
+            invertedIndex = json.load(content)
     print("Finished loading the inverted index\n")
 
     while True:

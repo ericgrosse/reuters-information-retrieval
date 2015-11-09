@@ -3,6 +3,7 @@ from glob import glob
 import re
 import collections
 import pickle
+import json
 from itertools import chain
 
 '''
@@ -61,12 +62,12 @@ if generateFiles.lower() == 'y':
 
     masterList = []
 
-    masterOutputFilename = outputDirectory + "/_master-inverted-index-raw" + ("-compressed" if compressing else "-uncompressed") + ".txt"
-    masterOutput = open(masterOutputFilename, "w")
-
     for file in inputFileList:
         print("Processing file " + str(file))
-        invertedIndex = pickle.load(open(file, 'rb'))
+
+        with open(file, 'rb') as content:
+            invertedIndex = json.load(content)
+
         masterList.append(invertedIndex)
 
     print("\nCreating the master inverted index...")
@@ -75,11 +76,6 @@ if generateFiles.lower() == 'y':
     masterInvertedIndexFilename = outputDirectory + "/master-inverted-index" + ("-compressed" if compressing else "-uncompressed") + ".txt"
 
     print("\nWriting the master inverted index to " + masterInvertedIndexFilename)
-    pickle.dump(masterInvertedIndex, open(masterInvertedIndexFilename,'wb'))
+    with open(masterInvertedIndexFilename,'wb') as output:
+        json.dump(masterInvertedIndex, output)
     print("Finished writing to " + masterInvertedIndexFilename)
-
-    print("\nWriting the master inverted index to " + masterOutputFilename)
-    for el in masterInvertedIndex:
-        masterOutput.write(str(el) + "\n")
-    masterOutput.close()
-    print("Finished writing to " + masterOutputFilename + "\n")

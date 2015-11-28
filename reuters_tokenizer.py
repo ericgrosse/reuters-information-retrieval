@@ -6,6 +6,16 @@ import pickle
 import json
 import msgpack
 import time
+from bs4 import BeautifulSoup
+import nltk
+from nltk import word_tokenize
+import codecs
+
+def parseHTML(html):
+    soup = BeautifulSoup(html.decode('utf-8', 'ignore'), "html.parser")
+    [s.extract() for s in soup('script')]
+    return soup.get_text()
+
 
 def partitionRule(incrementValue, compareValue, cutoff):
     """
@@ -79,20 +89,11 @@ if generateFiles.lower() == 'y':
 
             if compressing:
 
-                words_filtered = re.sub("&#[0-9]+;*", "", words_raw) #filters out ASCII symbols of the form &#{number};
-                words = re.split('[^a-zA-Z]+', words_filtered) # filters out newlines, numbers and punctuation
-
-                # Removes all content before the <BODY> tag and after the </BODY> tag (basically removes all the XML tags)
-
-                if "BODY" in words:
-                    openingBodyTag = words.index("BODY")
-                    words = words[openingBodyTag + 1:]
-                    closingBodyTag = words.index("BODY")
-                    words = words[:closingBodyTag]
+                words = parseHTML(words_raw)
+                words = re.split('[^a-zA-Z]+', words) # filters out newlines, numbers and punctuation
 
                 words = [x.lower() for x in words] # convert words to lowercase
-                words = [x for x in words if x not in stopwords] # remove stopwords
-                words = [x for x in words if x not in ''] # filters out empty strings
+                #words = [x for x in words if x not in stopwords] # no longer using stopwords because of aFinn word conflict
 
             else:
                 words = re.split('\W+', words_raw) # only filters out newlines and punctuation

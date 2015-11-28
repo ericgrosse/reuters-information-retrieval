@@ -67,7 +67,8 @@ if generateFiles.lower() == 'y':
         print("Processing file " + str(file))
 
         with open(file, 'rb') as content:
-            invertedIndex = json.load(content)
+            byteData = pickle.load(content)
+            invertedIndex = msgpack.unpackb(byteData)
 
         masterList.append(invertedIndex)
 

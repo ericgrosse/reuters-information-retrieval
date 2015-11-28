@@ -4,6 +4,8 @@ import re
 import collections
 import pickle
 import json
+import msgpack
+import time
 
 def partitionRule(incrementValue, compareValue, cutoff):
     """
@@ -65,8 +67,10 @@ if generateFiles.lower() == 'y':
     stopwords = open("stopwords.sgm", 'r').read().split("\n")
     sumOfDocLengths = 0
 
-    for block in blocks:
+    startTotal = time.time()
 
+    for block in blocks:
+        start = time.time()
         invertedIndex = {}
 
         for file in block:
@@ -109,7 +113,7 @@ if generateFiles.lower() == 'y':
                     invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength}]
 
             if PRODUCTION_MODE:
-                if fileNumber % 10 == 0:
+                if fileNumber % 100 == 0:
                     print("Finished processing file " + str(fileNumber))
 
             fileNumber += 1
@@ -125,9 +129,12 @@ if generateFiles.lower() == 'y':
         # Sort the inverted index and write to disk (as binary data)
         sortedIndex = map(list, sorted(invertedIndex.items())) # The sorted index is a list of lists instead of a dictionary
         with open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
-            json.dump(sortedIndex, output)
-
-        if PRODUCTION_MODE:
-            print("\nFinished processing block " + str(blockNumber) + "\n")
+            byteData = msgpack.packb(sortedIndex)
+            pickle.dump(byteData, output)
+        end = time.time()
+        print("Finished processing block " + str(blockNumber) + " in " + str(end-start) + " seconds")
 
         blockNumber += 1
+
+    endTotal = time.time()
+    print("\nThe full tokenization took " + str(endTotal-startTotal) + " seconds")

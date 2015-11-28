@@ -4,6 +4,7 @@ import re
 import collections
 import pickle
 import json
+import msgpack
 from itertools import chain
 
 '''
@@ -74,8 +75,8 @@ if generateFiles.lower() == 'y':
     masterInvertedIndex = parallelMerge(masterList)
     print("Master inverted index created")
     masterInvertedIndexFilename = outputDirectory + "/master-inverted-index" + ("-compressed" if compressing else "-uncompressed") + ".txt"
-
     print("\nWriting the master inverted index to " + masterInvertedIndexFilename)
     with open(masterInvertedIndexFilename,'wb') as output:
-        json.dump(masterInvertedIndex, output)
+        byteData = msgpack.packb(masterInvertedIndex)
+        pickle.dump(byteData, output)
     print("Finished writing to " + masterInvertedIndexFilename)

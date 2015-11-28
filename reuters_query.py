@@ -6,6 +6,8 @@ import pickle
 from itertools import chain
 import math
 import json
+import time
+import msgpack
 
 generateFiles = raw_input("Do you want to run any queries?: (y/n) ")
 if generateFiles.lower() == 'y':
@@ -34,10 +36,14 @@ if generateFiles.lower() == 'y':
     input.close()
 
     print("Loading the inverted index from disk")
+    start = time.time()
     for file in inputFile:
         with open(file, 'rb') as content:
-            invertedIndex = json.load(content)
-    print("Finished loading the inverted index\n")
+            byteData = pickle.load(content)
+            invertedIndex = msgpack.unpackb(byteData)
+    end = time.time()
+    print("Finished loading the inverted index")
+    print("Operation took " + str(end-start) + " seconds\n")
 
     while True:
         searchString = raw_input('Please enter a search query: ')
@@ -87,8 +93,8 @@ if generateFiles.lower() == 'y':
             '''for el in matches:
                 print(el)'''
 
-            output = open('reuters-test-input/test-data.txt','wb')
-            pickle.dump(matches, output)
+            #output = open('reuters-test-input/test-data.txt','wb')
+            #pickle.dump(matches, output)
 
             #print(matchedWords)
             #print(docIDMatches)

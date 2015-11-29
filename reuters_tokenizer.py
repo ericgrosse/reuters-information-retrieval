@@ -62,6 +62,15 @@ def partitionList(inputList, numberOfPartitions):
         count = count + offset
         appendCount = appendCount + 1
     return newList
+def visitAllSubdirectories(rootFolder):
+    result = []
+    for name in glob(rootFolder + "/*"):
+        partition = name.split("/")
+        if "." not in partition[-1]:
+            result += visitAllSubdirectories(name)
+        else:
+            result.append(name)
+    return result
 
 generateFiles = raw_input("Do you want to tokenize the Reuters collection?: (y/n) ")
 if generateFiles.lower() == 'y':
@@ -80,7 +89,7 @@ if generateFiles.lower() == 'y':
         outputDirectory = "reuters-test-output"
 
     #other settings
-    inputFileList = glob(inputDirectory + '/reuters-*.sgm')
+    inputFileList = visitAllSubdirectories(inputDirectory)
     numberOfFiles = len(inputFileList)
     numberOfBlocks = int(input("How many blocks would you wish to use: "))
     blocks = partitionList(inputFileList, numberOfBlocks)

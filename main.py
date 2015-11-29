@@ -1,20 +1,13 @@
-import fileinput
+from bs4 import BeautifulSoup
 from glob import glob
 import re
-import collections
 import pickle
-import json
-import msgpack
 import time
-from bs4 import BeautifulSoup
 import math
-import nltk
-from nltk import word_tokenize
-import codecs
-import sys
 import copy
 
 def sentiment(document, dictionaryPath):
+    ''' Computes the sentiment score for a given document '''
     filenameAFINN = dictionaryPath
     afinn = dict(map(lambda (w, s): (w, int(s)), [
             ws.strip().split('\t') for ws in open(filenameAFINN) ]))
@@ -22,17 +15,17 @@ def sentiment(document, dictionaryPath):
     words = pattern_split.split(document.lower())
     sentiments = map(lambda word: afinn.get(word, 0), words)
     if sentiments:
-        # How should you weight the individual word sentiments?
-        # You could do N, sqrt(N) or 1 for example. Here I use sqrt(N)
         sentiment = float(sum(sentiments))/math.sqrt(len(sentiments))
     else:
         sentiment = 0
     return sentiment
 def parseHTML(html):
+    ''' Extracts the content of the inputted HTML page '''
     soup = BeautifulSoup(html, "html.parser")
     [s.extract() for s in soup('script')]
     return soup.get_text()
 def visitAllSubdirectories(rootFolder):
+    ''' Recursively searches through the subdirectories of a root folder to find all the containing files '''
     result = []
     for name in glob(rootFolder + "/*"):
         partition = name.split("/")
@@ -44,7 +37,6 @@ def visitAllSubdirectories(rootFolder):
 
 generateFiles = raw_input("Do you want to perform sentiment analysis on your collection?: (y/n) ")
 if generateFiles.lower() == 'y':
-
     #config settings
     PRODUCTION_MODE = True
 
@@ -76,6 +68,7 @@ if generateFiles.lower() == 'y':
 
     inputFileList = visitAllSubdirectories(inputDirectory)
 
+    # partition the file list by department
     for file in inputFileList:
         department = file.split("\\")[1]
         if department in departments.keys():
@@ -91,25 +84,25 @@ if generateFiles.lower() == 'y':
         start = time.time()
         invertedIndex = []
         totalScore = 0
-        numberOfFiles = len(files)
 
         for file in files:
 
+            # Pre-processing
             words_raw = open(file, 'r').read()
             words = parseHTML(words_raw)
             words = re.split('[^a-zA-Z]+', words) # filters out newlines, numbers and punctuation
             words = [x.lower() for x in words] # convert words to lowercase
             words = [x for x in words if x not in stopwords] # filter out stopwords
             words = [x for x in words if x not in ""] # filters out the empty string
-
             # Compute the sentiment score for the document
             docString = ' '.join(words)
-            sentimentScore = sentiment(docString, aFinn)
+            scaleFactor = 100
+            sentimentScore = float( sentiment(docString, aFinn) * scaleFactor ) / float( len(words) )
+
             totalScore += sentimentScore
             invertedIndex.append([file, sentimentScore])
 
         departmentScores[department] = totalScore
-        departmentAverageScores[department] = float(totalScore) / float(numberOfFiles)
 
         with open(outputDirectory + '/inverted-index-' + department + '.txt', 'wb') as output:
             pickle.dump(invertedIndex, output)
@@ -125,12 +118,7 @@ if generateFiles.lower() == 'y':
     print("\nThe full preprocessing took " + str(endTotal-startTotal) + " seconds")
 
     sortedDepartmentScores = sorted(departmentScores.items(), key=lambda x: x[1], reverse=True)
-    sortedAverageDepartmentScores = sorted(departmentAverageScores.items(), key=lambda x: x[1], reverse=True)
 
-    print("\nDepartment Scores:\n")
+    print("\nDepartment Sentiment Scores:\n")
     for items in sortedDepartmentScores:
-            print(items[0] + ": " + str(items[1]))
-
-    print("\nDepartment Average Scores:\n")
-    for items in sortedAverageDepartmentScores:
             print(items[0] + ": " + str(items[1]))

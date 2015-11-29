@@ -2,6 +2,7 @@
 .project
 .pydevproject
 .DS_Store
+generated-files
 test-input
 test-output
 test.py

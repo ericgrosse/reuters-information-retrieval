@@ -7,15 +7,29 @@ import json
 import msgpack
 import time
 from bs4 import BeautifulSoup
+import math
 import nltk
 from nltk import word_tokenize
 import codecs
 
+def sentiment(document, dictionaryPath):
+    filenameAFINN = dictionaryPath
+    afinn = dict(map(lambda (w, s): (w, int(s)), [
+            ws.strip().split('\t') for ws in open(filenameAFINN) ]))
+    pattern_split = re.compile(r"\W+")
+    words = pattern_split.split(document.lower())
+    sentiments = map(lambda word: afinn.get(word, 0), words)
+    if sentiments:
+        # How should you weight the individual word sentiments?
+        # You could do N, sqrt(N) or 1 for example. Here I use sqrt(N)
+        sentiment = float(sum(sentiments))/math.sqrt(len(sentiments))
+    else:
+        sentiment = 0
+    return sentiment
 def parseHTML(html):
     soup = BeautifulSoup(html, "html.parser")
     [s.extract() for s in soup('script')]
     return soup.get_text()
-
 def partitionRule(incrementValue, compareValue, cutoff):
     """
     Helper function for partitionList. Decides whether the partition size should round up or down
@@ -74,6 +88,7 @@ if generateFiles.lower() == 'y':
     fileNumber = 1
     blockNumber = 1
     stopwords = open("stopwords.sgm", 'r').read().split("\n")
+    aFinn = 'AFINN/AFINN-111.txt'
     sumOfDocLengths = 0
 
     startTotal = time.time()
@@ -95,6 +110,10 @@ if generateFiles.lower() == 'y':
                 words = re.split('\W+', words_raw) # only filters out newlines and punctuation
                 words = [x for x in words if x not in ''] # filters out empty strings
 
+            # Compute the sentiment score for the document
+            docString = ' '.join(words)
+            sentimentScore = sentiment(docString, aFinn)
+
             # Store the document length as the number of indexed words in the document. Results differ based on whether or not compression is applied
             documentLength = len(words)
             sumOfDocLengths += documentLength
@@ -105,13 +124,12 @@ if generateFiles.lower() == 'y':
                     if invertedIndex[word][-1]['docID'] == fileNumber:
                         invertedIndex[word][-1]['tf'] += 1
                     else:
-                        invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength': documentLength})
+                        invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength': documentLength, 'sentiment': sentimentScore})
                 elif word not in invertedIndex:
-                    invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength}]
+                    invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength, 'sentiment': sentimentScore}]
 
-            if PRODUCTION_MODE:
-                if fileNumber % 100 == 0:
-                    print("Finished processing file " + str(fileNumber))
+            if fileNumber % 100 == 0:
+                print("Finished processing file " + str(fileNumber))
 
             fileNumber += 1
 
@@ -125,9 +143,15 @@ if generateFiles.lower() == 'y':
 
         # Sort the inverted index and write to disk (as binary data)
         sortedIndex = map(list, sorted(invertedIndex.items())) # The sorted index is a list of lists instead of a dictionary
+
         with open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
             byteData = msgpack.packb(sortedIndex)
             pickle.dump(byteData, output)
+            # Write the raw output as well if not in production mode
+            if not PRODUCTION_MODE:
+                with open(outputDirectory + '/inverted-index-block-raw-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
+                    json.dump(sortedIndex, output)
+
         end = time.time()
         print("Finished processing block " + str(blockNumber) + " in " + str(end-start) + " seconds")
 

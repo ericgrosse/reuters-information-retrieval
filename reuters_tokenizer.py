@@ -12,10 +12,9 @@ from nltk import word_tokenize
 import codecs
 
 def parseHTML(html):
-    soup = BeautifulSoup(html.decode('utf-8', 'ignore'), "html.parser")
+    soup = BeautifulSoup(html, "html.parser")
     [s.extract() for s in soup('script')]
     return soup.get_text()
-
 
 def partitionRule(incrementValue, compareValue, cutoff):
     """
@@ -88,13 +87,10 @@ if generateFiles.lower() == 'y':
             words_raw = open(file, 'r').read()
 
             if compressing:
-
                 words = parseHTML(words_raw)
                 words = re.split('[^a-zA-Z]+', words) # filters out newlines, numbers and punctuation
-
                 words = [x.lower() for x in words] # convert words to lowercase
-                #words = [x for x in words if x not in stopwords] # no longer using stopwords because of aFinn word conflict
-
+                words = [x for x in words if x not in stopwords] # filter out stopwords
             else:
                 words = re.split('\W+', words_raw) # only filters out newlines and punctuation
                 words = [x for x in words if x not in ''] # filters out empty strings

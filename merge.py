@@ -48,15 +48,13 @@ if generateFiles.lower() == 'y':
     #config settings
 
     PRODUCTION_MODE = True
-    isCompressed = raw_input("Do you want to merge the compressed blocks (y) or the uncompressed ones (n): ")
-    compressing = True if isCompressed.lower() == 'y' else False
 
     if PRODUCTION_MODE:
-        inputDirectory = 'inverted-index' + ("-compressed" if compressing else "-uncompressed")
+        inputDirectory = 'inverted-index-blocks'
         outputDirectory = 'inverted-index-result'
     else:
-        inputDirectory = "reuters-test-input"
-        outputDirectory = "reuters-test-output"
+        inputDirectory = "test-input"
+        outputDirectory = "test-output"
 
     #other settings
     inputFileList = glob(inputDirectory + '/inverted-index-block-*.txt')
@@ -75,9 +73,13 @@ if generateFiles.lower() == 'y':
     print("\nCreating the master inverted index...")
     masterInvertedIndex = parallelMerge(masterList)
     print("Master inverted index created")
-    masterInvertedIndexFilename = outputDirectory + "/master-inverted-index" + ("-compressed" if compressing else "-uncompressed") + ".txt"
+    masterInvertedIndexFilename = outputDirectory + "/master-inverted-index.txt"
     print("\nWriting the master inverted index to " + masterInvertedIndexFilename)
     with open(masterInvertedIndexFilename,'wb') as output:
         byteData = msgpack.packb(masterInvertedIndex)
         pickle.dump(byteData, output)
+    # Write the raw output as well
+    with open(outputDirectory + "/raw-master-inverted-index.txt", 'wb') as output:
+        json.dump(masterInvertedIndex, output)
+
     print("Finished writing to " + masterInvertedIndexFilename)

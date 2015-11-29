@@ -14,21 +14,15 @@ if generateFiles.lower() == 'y':
 
     #config settings
     PRODUCTION_MODE = True
-    isCompressed = raw_input("Do you want to run on the compressed inverted index (y) or the uncompressed one (n)?: ")
-    compressing = True if isCompressed.lower() == 'y' else False
 
     if PRODUCTION_MODE:
         inputDirectory = 'inverted-index-result'
     else:
-        inputDirectory = "reuters-test-input"
+        inputDirectory = "test-input"
 
     #other settings
-    if compressing:
-        inputFile = glob(inputDirectory + '/master-inverted-index-compressed.txt')
-    else:
-        inputFile = glob(inputDirectory + '/master-inverted-index-uncompressed.txt')
-
-    stopwords = open("stopwords.sgm", 'r').read().split("\n")
+    inputFile = glob(inputDirectory + '/master-inverted-index.txt')
+    stopwords = open("supporting-files/stopwords.sgm", 'r').read().split("\n")
 
     input = open(inputDirectory + "/data.txt", 'rb')
     numberOfDocs = pickle.load(input)
@@ -49,10 +43,9 @@ if generateFiles.lower() == 'y':
         searchString = raw_input('Please enter a search query: ')
         queryWords = re.split('\W+', searchString)
 
-        if compressing:
-            queryWords = [x for x in queryWords if x not in stopwords] # remove stopwords
-            queryWords = [x for x in queryWords if x not in ""] # remove empty strings
-            queryWords = [x.lower() for x in queryWords] # lowercase each word
+        queryWords = [x for x in queryWords if x not in stopwords] # remove stopwords
+        queryWords = [x for x in queryWords if x not in ""] # remove empty strings
+        queryWords = [x.lower() for x in queryWords] # lowercase each word
 
         # Compute the term frequency of the query terms
         queryWordFrequencies = {}
@@ -93,14 +86,11 @@ if generateFiles.lower() == 'y':
             '''for el in matches:
                 print(el)'''
 
-            #output = open('reuters-test-input/test-data.txt','wb')
-            #pickle.dump(matches, output)
-
-            #print(matchedWords)
-            #print(docIDMatches)
-
             #Perform the Okapi BM25 calculations
             rankedList = []
+
+            print("\nNumber of files: " + str(numberOfDocs))
+            print("Average document length: " + str(avgDocLength) + "\n")
 
             for docNumber in docIDMatches:
 

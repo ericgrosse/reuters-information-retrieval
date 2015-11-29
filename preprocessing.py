@@ -72,21 +72,19 @@ def visitAllSubdirectories(rootFolder):
             result.append(name)
     return result
 
-generateFiles = raw_input("Do you want to tokenize the Reuters collection?: (y/n) ")
+generateFiles = raw_input("Do you want to tokenize your collection?: (y/n) ")
 if generateFiles.lower() == 'y':
 
     #config settings
 
     PRODUCTION_MODE = True
-    isCompressed = raw_input("Do you want to apply compression techniques?: (y/n) ")
-    compressing = True if isCompressed.lower() == 'y' else False
 
     if PRODUCTION_MODE:
-        inputDirectory = 'reuters-split'
-        outputDirectory = 'inverted-index' + ("-compressed" if compressing else "-uncompressed")
+        inputDirectory = 'web-documents'
+        outputDirectory = 'inverted-index-blocks'
     else:
-        inputDirectory = "reuters-test-input"
-        outputDirectory = "reuters-test-output"
+        inputDirectory = "test-input"
+        outputDirectory = "test-output"
 
     #other settings
     inputFileList = visitAllSubdirectories(inputDirectory)
@@ -96,8 +94,8 @@ if generateFiles.lower() == 'y':
 
     fileNumber = 1
     blockNumber = 1
-    stopwords = open("stopwords.sgm", 'r').read().split("\n")
-    aFinn = 'AFINN/AFINN-111.txt'
+    stopwords = open("supporting-files/stopwords.sgm", 'r').read().split("\n")
+    aFinn = 'supporting-files/AFINN/AFINN-111.txt'
     sumOfDocLengths = 0
 
     startTotal = time.time()
@@ -109,15 +107,11 @@ if generateFiles.lower() == 'y':
         for file in block:
 
             words_raw = open(file, 'r').read()
-
-            if compressing:
-                words = parseHTML(words_raw)
-                words = re.split('[^a-zA-Z]+', words) # filters out newlines, numbers and punctuation
-                words = [x.lower() for x in words] # convert words to lowercase
-                words = [x for x in words if x not in stopwords] # filter out stopwords
-            else:
-                words = re.split('\W+', words_raw) # only filters out newlines and punctuation
-                words = [x for x in words if x not in ''] # filters out empty strings
+            words = parseHTML(words_raw)
+            words = re.split('[^a-zA-Z]+', words) # filters out newlines, numbers and punctuation
+            words = [x.lower() for x in words] # convert words to lowercase
+            words = [x for x in words if x not in stopwords] # filter out stopwords
+            words = [x for x in words if x not in ""] # filters out the empty string
 
             # Compute the sentiment score for the document
             docString = ' '.join(words)
@@ -136,19 +130,15 @@ if generateFiles.lower() == 'y':
                         invertedIndex[word].append({'docID': fileNumber, 'tf': 1, 'docLength': documentLength, 'sentiment': sentimentScore})
                 elif word not in invertedIndex:
                     invertedIndex[word] = [{'docID': fileNumber, 'tf': 1, 'docLength': documentLength, 'sentiment': sentimentScore}]
-
-            if fileNumber % 100 == 0:
-                print("Finished processing file " + str(fileNumber))
-
             fileNumber += 1
 
         # Bookkeeping sent to a separate file
         averageDocumentLength = float(sumOfDocLengths) / float(numberOfFiles)
-        if PRODUCTION_MODE:
-            output = open('inverted-index-result/data.txt', 'wb')
-            pickle.dump(numberOfFiles, output)
-            pickle.dump(averageDocumentLength, output)
-            output.close()
+
+        output = open('inverted-index-result/data.txt', 'wb')
+        pickle.dump(numberOfFiles, output)
+        pickle.dump(averageDocumentLength, output)
+        output.close()
 
         # Sort the inverted index and write to disk (as binary data)
         sortedIndex = map(list, sorted(invertedIndex.items())) # The sorted index is a list of lists instead of a dictionary
@@ -156,10 +146,9 @@ if generateFiles.lower() == 'y':
         with open(outputDirectory + '/inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
             byteData = msgpack.packb(sortedIndex)
             pickle.dump(byteData, output)
-            # Write the raw output as well if not in production mode
-            if not PRODUCTION_MODE:
-                with open(outputDirectory + '/inverted-index-block-raw-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
-                    json.dump(sortedIndex, output)
+        # Write the raw output as well
+        with open(outputDirectory + '/raw-inverted-index-block-' + str(blockNumber).zfill(3) + '.txt', 'wb') as output:
+            json.dump(sortedIndex, output)
 
         end = time.time()
         print("Finished processing block " + str(blockNumber) + " in " + str(end-start) + " seconds")

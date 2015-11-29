@@ -1,8 +1,7 @@
 .idea
 .project
 .pydevproject
-inverted-index-blocks
-inverted-index-result
+.DS_Store
 test-input
 test-output
 test.py
